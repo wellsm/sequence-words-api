@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: sequence-words-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sequence-words
+    username: docker
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migrations
+
+springdoc:
+  swagger-ui:
+    enabled: false
+    default-models-expand-depth: -1
+  packages-to-scan: com.well.sequencewordsapi
+
+
+scalar:
+  enabled: true
+  path: /docs
+  url: /v3/api-docs
+

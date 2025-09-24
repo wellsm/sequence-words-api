@@ -1,0 +1,10 @@
+services:
+  postgres:
+    container_name: 'sequence-words-postgres'
+    image: 'postgres:17-alpine3.22'
+    environment:
+      POSTGRES_DB: sequence-words
+      POSTGRES_PASSWORD: docker
+      POSTGRES_USER: docker
+    ports:
+      - 5432:5432
