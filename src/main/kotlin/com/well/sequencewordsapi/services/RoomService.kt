@@ -67,6 +67,10 @@ class RoomService (
             seat = 1
         ))
 
+        roomRepository.save(room.apply {
+            state = RoomState.CHOOSING
+        })
+
         return room.toResponse(me)
     }
 
@@ -120,5 +124,24 @@ class RoomService (
         })
 
         return guess
+    }
+
+    @Transactional
+    fun passTurn(id: String, token: String): RoomResponse {
+        val room = roomRepository.findById(id).orElseThrow {
+            RoomNotFoundException(id)
+        }
+
+        val me = playerService.getPlayerByToken(token)
+
+        if (room.turn != me.seat) {
+            throw InvalidTurnPlayException()
+        }
+
+        roomRepository.save(room.apply {
+            this.turn = room.players.first { it.id != me.id }.seat
+        })
+
+        return room.toResponse(me)
     }
 }

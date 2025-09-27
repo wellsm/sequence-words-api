@@ -57,4 +57,14 @@ class RoomController (
         return roomService.joinRoom(room, data)
             .let { ResponseEntity.ok(it) }
     }
+
+    @Operation(summary = "Pass Turn")
+    @PostMapping("/{room}/pass")
+    fun passTurn(
+        @PathVariable room: String,
+        @RequestHeader("Authorization") token: String
+    ): ResponseEntity<RoomResponse> {
+        return roomService.passTurn(room, token)
+            .let { ResponseEntity.ok(it) }
+    }
 }

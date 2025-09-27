@@ -11,6 +11,8 @@ fun Room.toResponse(me: Player): RoomResponse {
         state = state.toString(),
         turn = turn,
         me = me.toResponse(true),
-        opponent = players.find { it.id != me.id }?.toResponse(false)
+        opponent = players.find { it.id != me.id }?.toResponse(false),
+        createdAt = createdAt.toString(),
+        updatedAt = updatedAt.toString()
     )
 }

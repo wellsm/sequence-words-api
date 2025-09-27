@@ -34,9 +34,7 @@ class PlayerService (
         val id = decoded.subject.toLong()
         val player = playerRepository.findById(id).orElseThrow()
 
-        return player.apply {
-            hash = token
-        }
+        return player
     }
 
     fun generateToken(player: Player): String {

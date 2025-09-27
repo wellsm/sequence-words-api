@@ -4,7 +4,9 @@ CREATE TABLE rooms
     state          VARCHAR(50)  NOT NULL,
     how_many_words INTEGER      NOT NULL,
     turn           INTEGER      NOT NULL,
+    winner_id      BIGINT,
     created_at     TIMESTAMP WITHOUT TIME ZONE,
+    updated_at     TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_rooms PRIMARY KEY (id)
 );
 
@@ -17,6 +19,7 @@ CREATE TABLE players
     seat           INTEGER                                 NOT NULL,
     is_ready       BOOLEAN                                 NOT NULL,
     created_at     TIMESTAMP WITHOUT TIME ZONE,
+    updated_at     TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_players PRIMARY KEY (id)
 );
 
@@ -29,6 +32,7 @@ CREATE TABLE words
     value      VARCHAR(255)                            NOT NULL,
     revealed   INTEGER                                 NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE,
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_words PRIMARY KEY (id)
 );
 
@@ -37,6 +41,9 @@ CREATE UNIQUE INDEX IDX_ROOM_SEAT ON players (room_id, seat);
 CREATE INDEX IDX_ROOM_PLAYER ON words (room_id, player_id);
 
 CREATE UNIQUE INDEX IDX_PLAYER_INDEX ON words (player_id, index);
+
+ALTER TABLE rooms
+    ADD CONSTRAINT FK_ROOM_WINNER FOREIGN KEY (winner_id) REFERENCES players (id);
 
 ALTER TABLE players
     ADD CONSTRAINT FK_PLAYERS_ON_ROOM FOREIGN KEY (room_id) REFERENCES rooms (id);

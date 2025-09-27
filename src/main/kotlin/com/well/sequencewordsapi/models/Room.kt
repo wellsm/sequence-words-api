@@ -10,9 +10,12 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
 
 @Entity
@@ -28,8 +31,13 @@ class Room(
     var howManyWords: Int = 5,
     @Column(name = "turn", nullable = false)
     var turn: Int = 0,
+    @JoinColumn(name = "winner_id", nullable = true)
+    @OneToOne(targetEntity = Player::class, fetch = FetchType.LAZY)
+    var winner: Player? = null,
     @CreationTimestamp
     var createdAt: Instant = Instant.now(),
+    @UpdateTimestamp
+    var updatedAt: Instant = Instant.now(),
     @OneToMany(mappedBy = "room", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     var players: MutableList<Player> = mutableListOf(),
     @OneToMany(mappedBy = "room", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)

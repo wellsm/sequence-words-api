@@ -14,25 +14,14 @@ fun CreatePlayerDTO.toEntity(): Player {
 }
 
 fun Player.toResponse(isMe: Boolean): PlayerResponse {
-    val words = if (isMe) {
-        words.map { it.value.uppercase() }
-    } else {
-        words.mapIndexed { index, word ->
-            if (index == 0) {
-                word.value.uppercase()
-            } else {
-                word.value.take(word.revealed).uppercase()
-            }
-        }
-    }
-
     return PlayerResponse(
         id = id,
         name = name,
         isOwner = isOwner,
         seat = seat,
+        index = if (words.isEmpty()) -1 else words.indexOfFirst { it.value.length != it.revealed },
         isReady = isReady,
         hash = hash,
-        words = words
+        words = words.map { it.toResponse(isMe) }
     )
 }

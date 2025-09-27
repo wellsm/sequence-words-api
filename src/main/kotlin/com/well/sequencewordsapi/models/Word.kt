@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
 
 @Entity
@@ -25,7 +26,7 @@ import java.time.Instant
 class Word(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    var id: Long = 0,
     @JoinColumn(name = "room_id", nullable = false)
     @ManyToOne(targetEntity = Room::class, fetch = FetchType.LAZY)
     var room: Room,
@@ -40,4 +41,6 @@ class Word(
     var revealed: Int = 1,
     @CreationTimestamp
     var createdAt: Instant = Instant.now(),
+    @UpdateTimestamp
+    var updatedAt: Instant = Instant.now(),
 )

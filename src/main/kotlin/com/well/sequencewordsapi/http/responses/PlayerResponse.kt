@@ -11,14 +11,12 @@ data class PlayerResponse(
     val isOwner: Boolean = false,
     @field:Schema(example = "0", description = "Player's seat")
     val seat: Int = 0,
+    @field:Schema(example = "0", description = "Word's index to guess")
+    val index: Int = 0,
     @field:Schema(example = "true", description = "Is ready to play")
     val isReady: Boolean = false,
     @field:Schema(example = "hash", description = "Player's hash")
     val hash: String? = null,
-    @field:Schema(
-        description = "Words to guess",
-        type = "array",
-        example = "[\"Hello\", \"World\", \"Earth\", \"Plant\", \"Tree\"]"
-    )
-    val words: List<String>
+    @field:Schema(description = "Words to guess", type = "array")
+    val words: List<WordResponse>
 )

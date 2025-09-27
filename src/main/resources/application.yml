@@ -16,9 +16,12 @@ springdoc:
     default-models-expand-depth: -1
   packages-to-scan: com.well.sequencewordsapi
 
-
 scalar:
   enabled: true
   path: /docs
   url: /v3/api-docs
 
+security:
+  cors:
+    allowed-origins:
+      - http://localhost:5173

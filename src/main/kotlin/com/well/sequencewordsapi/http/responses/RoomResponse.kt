@@ -14,5 +14,9 @@ data class RoomResponse (
     @field:Schema(description = "Me")
     val me: PlayerResponse,
     @field:Schema(description = "Opponent")
-    val opponent: PlayerResponse? = null
+    val opponent: PlayerResponse? = null,
+    @field:Schema(example = "2025", description = "Date of creation")
+    val createdAt: String = "",
+    @field:Schema(example = "", description = "Date of update")
+    val updatedAt: String = ""
 )
