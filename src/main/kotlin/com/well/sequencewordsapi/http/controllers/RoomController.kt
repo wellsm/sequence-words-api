@@ -43,7 +43,7 @@ class RoomController (
         return roomService.getRoomById(room)
             .let {
                 ResponseEntity.ok(
-                    it.toResponse(me = playerService.getPlayerByToken(token))
+                    it.toResponse(playerService.getPlayerByToken(token))
                 )
             }
     }

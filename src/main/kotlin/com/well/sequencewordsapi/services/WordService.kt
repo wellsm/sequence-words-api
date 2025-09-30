@@ -64,4 +64,16 @@ class WordService (
             }.size
         )
     }
+
+    fun revealNextLetter(player: Player) {
+        val word = player.words.sortedBy {
+            it.index
+        }.first {
+            it.revealed < it.value.length
+        }
+
+        wordRepository.save(word.apply {
+            revealed = word.revealed + 1
+        })
+    }
 }

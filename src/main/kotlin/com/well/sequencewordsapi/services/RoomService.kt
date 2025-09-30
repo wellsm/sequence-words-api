@@ -13,31 +13,29 @@ import com.well.sequencewordsapi.http.requests.SelectWordsDTO
 import com.well.sequencewordsapi.http.requests.TryWordDTO
 import com.well.sequencewordsapi.http.responses.GuessResponse
 import com.well.sequencewordsapi.http.responses.RoomResponse
+import com.well.sequencewordsapi.mappers.toEntity
 import com.well.sequencewordsapi.mappers.toResponse
 import com.well.sequencewordsapi.models.Player
 import com.well.sequencewordsapi.models.Room
 import com.well.sequencewordsapi.repositories.RoomRepository
 import jakarta.transaction.Transactional
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
-import kotlin.random.Random
+import java.time.Instant
 
 @Service
 class RoomService (
     private val roomRepository: RoomRepository,
     private val playerService: PlayerService,
-    private val wordService: WordService
+    private val wordService: WordService,
+    private val messaging: SimpMessagingTemplate
 ) {
 
-    private val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 
     @Transactional
     fun createRoom(data: CreateRoomDTO): RoomResponse {
-        val code = (1..6)
-            .map { chars[Random.nextInt(chars.length)] }
-            .joinToString("")
-
-        val room = roomRepository.save(Room(id = code))
-
+        val room = roomRepository.save(data.toEntity())
         val me = playerService.createPlayer(CreatePlayerDTO(
             name = data.name,
             room = room
@@ -71,6 +69,10 @@ class RoomService (
             state = RoomState.CHOOSING
         })
 
+        val opponent = room.players.first { it.id != me.id }
+
+        messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent))
+
         return room.toResponse(me)
     }
 
@@ -96,6 +98,10 @@ class RoomService (
                 state = RoomState.STARTED
                 turn = (0..1).random()
             })
+
+            val opponent = room.players.first { it.id != me.id }
+
+            messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent, Instant.now()))
         }
 
         return room.toResponse(me)
@@ -138,9 +144,30 @@ class RoomService (
             throw InvalidTurnPlayException()
         }
 
+        val elapsed = (Instant.now().epochSecond - room.updatedAt.epochSecond)
+
+        if (elapsed < room.duration * 0.75) {
+            throw InvalidTurnPlayException()
+        }
+
+        val opponent = room.players.first { it.id != me.id }
+
+        val allOpponentWordsAreRevealed = opponent.words.size == opponent.words.filter {
+            it.revealed == it.value.length
+        }.size
+
         roomRepository.save(room.apply {
             this.turn = room.players.first { it.id != me.id }.seat
+            this.state = if (allOpponentWordsAreRevealed) RoomState.FINISHED else room.state
+            this.winner = if (allOpponentWordsAreRevealed) me else null
+            this.updatedAt = Instant.now()
         })
+
+        if (room.winner == null) {
+            wordService.revealNextLetter(opponent)
+        }
+
+        messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent))
 
         return room.toResponse(me)
     }

@@ -31,6 +31,8 @@ class Room(
     var howManyWords: Int = 5,
     @Column(name = "turn", nullable = false)
     var turn: Int = 0,
+    @Column(name = "duration", nullable = false)
+    var duration: Int = 90,
     @JoinColumn(name = "winner_id", nullable = true)
     @OneToOne(targetEntity = Player::class, fetch = FetchType.LAZY)
     var winner: Player? = null,

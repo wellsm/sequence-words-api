@@ -3,8 +3,8 @@ package com.well.sequencewordsapi.mappers
 import com.well.sequencewordsapi.http.responses.WordResponse
 import com.well.sequencewordsapi.models.Word
 
-fun Word.toResponse(isMe: Boolean): WordResponse {
-    val value = if (isMe) {
+fun Word.toResponse(showLetters: Boolean): WordResponse {
+    val value = if (showLetters) {
         this.value.uppercase()
     } else {
         if (this.index == 0) {
@@ -13,7 +13,6 @@ fun Word.toResponse(isMe: Boolean): WordResponse {
             this.value.take(this.revealed).uppercase()
         }
     }
-
 
     return WordResponse(
         id = this.id,

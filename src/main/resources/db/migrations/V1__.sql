@@ -4,6 +4,7 @@ CREATE TABLE rooms
     state          VARCHAR(50)  NOT NULL,
     how_many_words INTEGER      NOT NULL,
     turn           INTEGER      NOT NULL,
+    duration       INTEGER      NOT NULL,
     winner_id      BIGINT,
     created_at     TIMESTAMP WITHOUT TIME ZONE,
     updated_at     TIMESTAMP WITHOUT TIME ZONE,

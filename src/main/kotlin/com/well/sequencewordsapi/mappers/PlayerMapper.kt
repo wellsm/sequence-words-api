@@ -13,15 +13,15 @@ fun CreatePlayerDTO.toEntity(): Player {
     )
 }
 
-fun Player.toResponse(isMe: Boolean): PlayerResponse {
+fun Player.toResponse(showLetters: Boolean, withWords: Boolean = true): PlayerResponse {
     return PlayerResponse(
         id = id,
         name = name,
         isOwner = isOwner,
         seat = seat,
-        index = if (words.isEmpty()) -1 else words.indexOfFirst { it.value.length != it.revealed },
+        index = words.indexOfFirst { it.value.length != it.revealed },
         isReady = isReady,
         hash = hash,
-        words = words.map { it.toResponse(isMe) }
+        words = if (withWords) words.sortedBy { it.id }.map { it.toResponse(showLetters) } else emptyList()
     )
 }

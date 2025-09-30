@@ -11,10 +11,14 @@ data class RoomResponse (
     val state: String,
     @field:Schema(example = "0", description = "Current Turn")
     val turn: Int = 0,
+    @field:Schema(example = "90", description = "Duration of the turn in seconds")
+    val duration: Int = 90,
     @field:Schema(description = "Me")
     val me: PlayerResponse,
     @field:Schema(description = "Opponent")
     val opponent: PlayerResponse? = null,
+    @field:Schema(description = "Winner")
+    val winner: PlayerResponse? = null,
     @field:Schema(example = "2025", description = "Date of creation")
     val createdAt: String = "",
     @field:Schema(example = "", description = "Date of update")
