@@ -3,6 +3,7 @@ package com.well.sequencewordsapi.services
 import com.well.sequencewordsapi.enums.RoomState
 import com.well.sequencewordsapi.exceptions.GameFinishedException
 import com.well.sequencewordsapi.exceptions.InvalidTurnPlayException
+import com.well.sequencewordsapi.exceptions.InvalidTurnPlayWaitUntilAvailableException
 import com.well.sequencewordsapi.exceptions.InvalidWordCountException
 import com.well.sequencewordsapi.exceptions.RoomFullException
 import com.well.sequencewordsapi.exceptions.RoomNotFoundException
@@ -17,10 +18,11 @@ import com.well.sequencewordsapi.mappers.toEntity
 import com.well.sequencewordsapi.mappers.toResponse
 import com.well.sequencewordsapi.models.Player
 import com.well.sequencewordsapi.models.Room
+import com.well.sequencewordsapi.models.User
 import com.well.sequencewordsapi.repositories.RoomRepository
-import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 @Service
@@ -31,12 +33,11 @@ class RoomService (
     private val messaging: SimpMessagingTemplate
 ) {
 
-
-
     @Transactional
-    fun createRoom(data: CreateRoomDTO): RoomResponse {
+    fun createRoom(user: User, data: CreateRoomDTO): RoomResponse {
         val room = roomRepository.save(data.toEntity())
         val me = playerService.createPlayer(CreatePlayerDTO(
+            user = user,
             name = data.name,
             room = room
         ))
@@ -44,12 +45,16 @@ class RoomService (
         return room.toResponse(me)
     }
 
-    fun getRoomById(id: String): Room {
-        return roomRepository.findById(id).orElseThrow()
+    @Transactional(readOnly = true)
+    fun getRoomById(user: User, id: String): RoomResponse {
+        val room = roomRepository.findById(id).orElseThrow()
+        val me = room.players.first { it.user?.id == user.id }
+
+        return room.toResponse(me)
     }
 
     @Transactional
-    fun joinRoom(id: String, data: JoinRoomDTO): RoomResponse {
+    fun joinRoom(user: User, id: String, data: JoinRoomDTO): RoomResponse {
         val room = roomRepository.findById(id).orElseThrow {
             RoomNotFoundException(id)
         }
@@ -59,6 +64,7 @@ class RoomService (
         }
 
         val me = playerService.createPlayer(CreatePlayerDTO(
+            user = user,
             name = data.name,
             room = room,
             isOwner = false,
@@ -77,10 +83,12 @@ class RoomService (
     }
 
     @Transactional
-    fun selectWords(id: String, me: Player, data: SelectWordsDTO): RoomResponse {
+    fun selectWords(id: String, user: User, data: SelectWordsDTO): RoomResponse {
         val room = roomRepository.findById(id).orElseThrow() {
             RoomNotFoundException(id)
         }
+
+        val me = room.players.first { it.user?.id == user.id }
 
         if (data.words.size != room.howManyWords) {
             throw InvalidWordCountException(room.howManyWords)
@@ -97,21 +105,24 @@ class RoomService (
             roomRepository.save(room.apply {
                 state = RoomState.STARTED
                 turn = (0..1).random()
+                updatedAt = Instant.now()
             })
 
             val opponent = room.players.first { it.id != me.id }
 
-            messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent, Instant.now()))
+            messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent))
         }
 
         return room.toResponse(me)
     }
 
     @Transactional
-    fun tryGuessWord(id: String, me: Player, data: TryWordDTO): GuessResponse {
+    fun tryGuessWord(id: String, user: User, data: TryWordDTO): GuessResponse {
         val room = roomRepository.findById(id).orElseThrow() {
             RoomNotFoundException(id)
         }
+
+        val me = room.players.first { it.user?.id == user.id }
 
         if (room.state == RoomState.FINISHED) {
             throw GameFinishedException(id)
@@ -121,24 +132,46 @@ class RoomService (
             throw InvalidTurnPlayException()
         }
 
+        val elapsed = (Instant.now().epochSecond - room.updatedAt.epochSecond)
+
+        if (elapsed < room.duration * 0.25 && data.word.isEmpty()) {
+            throw InvalidTurnPlayWaitUntilAvailableException()
+        }
+
         val opponent = room.players.first { it.id != me.id }
         val guess = wordService.tryGuessWord(opponent, data.word)
+
+        val allMyWordsAreRevealed = me.words.size == me.words.filter {
+            it.revealed == it.value.length
+        }.size
+
+        val winner = if (guess.isFinished && guess.isCorrect) {
+            me
+        } else if (allMyWordsAreRevealed) {
+            opponent
+        } else {
+            null
+        }
 
         roomRepository.save(room.apply {
             this.turn = if (guess.isCorrect) room.turn else opponent.seat
             this.state = if (guess.isFinished) RoomState.FINISHED else room.state
+            this.winner = winner
+            this.updatedAt = Instant.now()
         })
+
+        messaging.convertAndSend("/topic/room/${room.id}/player/${opponent.id}", room.toResponse(opponent))
 
         return guess
     }
 
     @Transactional
-    fun passTurn(id: String, token: String): RoomResponse {
+    fun passTurn(id: String, user: User): RoomResponse {
         val room = roomRepository.findById(id).orElseThrow {
             RoomNotFoundException(id)
         }
 
-        val me = playerService.getPlayerByToken(token)
+        val me = room.players.first { it.user?.id == user.id }
 
         if (room.turn != me.seat) {
             throw InvalidTurnPlayException()
@@ -146,7 +179,7 @@ class RoomService (
 
         val elapsed = (Instant.now().epochSecond - room.updatedAt.epochSecond)
 
-        if (elapsed < room.duration * 0.75) {
+        if (elapsed < room.duration * 0.25) {
             throw InvalidTurnPlayException()
         }
 
@@ -157,10 +190,10 @@ class RoomService (
         }.size
 
         roomRepository.save(room.apply {
-            this.turn = room.players.first { it.id != me.id }.seat
-            this.state = if (allOpponentWordsAreRevealed) RoomState.FINISHED else room.state
-            this.winner = if (allOpponentWordsAreRevealed) me else null
-            this.updatedAt = Instant.now()
+            turn = room.players.first { it.id != me.id }.seat
+            state = if (allOpponentWordsAreRevealed) RoomState.FINISHED else room.state
+            winner = if (allOpponentWordsAreRevealed) me else null
+            updatedAt = Instant.now()
         })
 
         if (room.winner == null) {

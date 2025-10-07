@@ -2,6 +2,7 @@ package com.well.sequencewordsapi.handlers
 
 import com.well.sequencewordsapi.exceptions.GameFinishedException
 import com.well.sequencewordsapi.exceptions.InvalidTurnPlayException
+import com.well.sequencewordsapi.exceptions.InvalidTurnPlayWaitUntilAvailableException
 import com.well.sequencewordsapi.exceptions.InvalidWordCountException
 import com.well.sequencewordsapi.exceptions.RoomFullException
 import com.well.sequencewordsapi.exceptions.RoomNotFoundException
@@ -38,6 +39,13 @@ class RoomExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleException(ex: InvalidTurnPlayException) = mapOf(
         "error" to "Invalid play",
+        "message" to ex.message
+    )
+
+    @ExceptionHandler(InvalidTurnPlayWaitUntilAvailableException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleException(ex: InvalidTurnPlayWaitUntilAvailableException) = mapOf(
+        "error" to "Invalid play, wait until available",
         "message" to ex.message
     )
 

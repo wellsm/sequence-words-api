@@ -6,6 +6,7 @@ import com.well.sequencewordsapi.models.Player
 
 fun CreatePlayerDTO.toEntity(): Player {
     return Player(
+        user = user,
         name = name,
         room = room,
         isOwner = isOwner,
@@ -14,6 +15,8 @@ fun CreatePlayerDTO.toEntity(): Player {
 }
 
 fun Player.toResponse(showLetters: Boolean, withWords: Boolean = true): PlayerResponse {
+
+
     return PlayerResponse(
         id = id,
         name = name,

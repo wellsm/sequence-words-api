@@ -2,8 +2,8 @@ spring:
   application:
     name: sequence-words-api
   datasource:
-    url: jdbc:postgresql://localhost:5432/sequence-words
-    username: docker
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   flyway:
@@ -23,5 +23,10 @@ scalar:
 
 security:
   cors:
-    allowed-origins:
-      - http://localhost:5173
+    allowed-origin: ${CORS_ALLOWED_ORIGIN}
+
+auth:
+  jwt:
+    issuer: sequence-words-api
+    secret: ${JWT_SECRET}
+    ttlSeconds: ${JWT_TTL_SECONDS:-86400}

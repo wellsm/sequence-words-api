@@ -10,17 +10,14 @@ import org.springframework.stereotype.Service
 
 @Service
 class PlayerService (
+    private val tokenService: TokenService,
     private val playerRepository: PlayerRepository
 ) {
 
     private val alg = Algorithm.HMAC256(System.getenv("PLAYER_TOKEN_SECRET") ?: "dev-secret-change")
 
     fun createPlayer(data: CreatePlayerDTO): Player {
-        val player = playerRepository.save(data.toEntity())
-
-        return player.apply {
-            hash = generateToken(this)
-        }
+        return playerRepository.save(data.toEntity())
     }
 
     fun playerIsReady(player: Player): Player {
@@ -35,14 +32,6 @@ class PlayerService (
         val player = playerRepository.findById(id).orElseThrow()
 
         return player
-    }
-
-    fun generateToken(player: Player): String {
-        return JWT.create()
-            .withSubject(player.id.toString())
-            .withClaim("seat", player.seat)
-            .withClaim("room", player.room?.id.toString())
-            .sign(alg)
     }
 
 }

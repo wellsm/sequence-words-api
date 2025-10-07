@@ -14,6 +14,8 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.persistence.Transient
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
 
@@ -28,9 +30,14 @@ class Player(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long = 0,
+    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(targetEntity = User::class, fetch = FetchType.LAZY)
+    var user: User? = null,
     @JoinColumn(name = "room_id", nullable = false)
     @ManyToOne(targetEntity = Room::class, fetch = FetchType.LAZY)
     var room: Room? = null,
+    @Column(name = "room_id", insertable = false, updatable = false)
+    var roomId: String? = null,
     @OneToMany(mappedBy = "player", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     var words: MutableList<Word> = mutableListOf(),
     @Column(name = "name", nullable = false)
